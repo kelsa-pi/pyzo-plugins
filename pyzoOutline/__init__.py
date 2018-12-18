@@ -4,6 +4,8 @@
 # Pyzo is distributed under the terms of the (new) BSD License.
 # The full license can be found in 'license.txt'.
 
+# Add sort option
+
 import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate

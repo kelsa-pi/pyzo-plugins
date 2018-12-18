@@ -10,6 +10,7 @@ from pyzo.core.assistant import PyzoAssistant
 tool_name = translate('pyzoToolbar', 'Toolbar')
 tool_summary = "Show the toolbar."
 
+
 def addItem(target, text, icon=None, callback=None, value=None):
     """
     Add an item to the toolbar. If callback is given and not None,
@@ -56,7 +57,7 @@ def printify():
 def setEditorBG(bgclr=None):
 
     # FIXME: update background
-    # second click on editor tab update color
+
     editor = pyzo.editors.getCurrentEditor()
     # Set background color options
     bg_names = pyzo.config.tools.pyzotoolbar.bgNames
@@ -69,7 +70,7 @@ def setEditorBG(bgclr=None):
     else:
         bgcolor = bg_colors[bg_names.index(default_bg)]
 
-    ss = 'QPlainTextEdit{background-color:%s; }' %  (bgcolor)
+    ss = 'QPlainTextEdit{background-color:%s; }' % bgcolor
 
     if editor:
         editor.setStyleSheet(ss)

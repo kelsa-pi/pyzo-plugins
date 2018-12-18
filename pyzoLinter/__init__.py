@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# Static code analysis tool - pylint
+
 import os
 
 import pyzo
@@ -23,16 +25,15 @@ class PyzoLinter(QtWidgets.QWidget):
         # The pyzo tool manager makes sure that there is an entry in
         # config.tools before the tool is instantiated.
 
-        toolId = self.__class__.__name__.lower()
-        self._config = pyzo.config.tools[toolId]
-        if not hasattr(self._config, 'showTypes'):
-            self._config.showTypes = ['class', 'def', 'cell', 'todo']
-        if not hasattr(self._config, 'level'):
-            self._config.level = 2
+        # toolId = self.__class__.__name__.lower()
+        # self._config = pyzo.config.tools[toolId]
+        # if not hasattr(self._config, 'showTypes'):
+        #     self._config.showTypes = ['class', 'def', 'cell', 'todo']
+        # if not hasattr(self._config, 'level'):
+        #     self._config.level = 2
 
         # Keep track of linter output
         self.output = ''
-        self.error_output = ''
 
         # Folder for linter output file
         self.output_folder = os.path.join(pyzo.appDataDir, 'tools', 'pyzoLinter')
@@ -40,7 +41,7 @@ class PyzoLinter(QtWidgets.QWidget):
         self.process = None
         self.locale_codec = pyzo.QtCore.QTextCodec.codecForLocale()
 
-        # Create button for reload curren file name
+        # Create button for reload current file name
         self._reload = QtWidgets.QToolButton(self)
         self._reload.setIcon(pyzo.icons.arrow_refresh)
         self._reload.setToolTip("Select file")
@@ -79,15 +80,15 @@ class PyzoLinter(QtWidgets.QWidget):
         self._empty = QtWidgets.QLabel(self)
 
         # Create options button
-        self._options = QtWidgets.QToolButton(self)
-        self._options.setIcon(pyzo.icons.filter)
-        self._options.setIconSize(QtCore.QSize(16, 16))
-        self._options.setPopupMode(self._options.InstantPopup)
-        self._options.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        # self._options = QtWidgets.QToolButton(self)
+        # self._options.setIcon(pyzo.icons.filter)
+        # self._options.setIconSize(QtCore.QSize(16, 16))
+        # self._options.setPopupMode(self._options.InstantPopup)
+        # self._options.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
 
         # Create options menu
-        self._options._menu = QtWidgets.QMenu()
-        self._options.setMenu(self._options._menu)
+        # self._options._menu = QtWidgets.QMenu()
+        # self._options.setMenu(self._options._menu)
 
         # Result label
         self._result = QtWidgets.QLabel(self)
@@ -170,7 +171,7 @@ class PyzoLinter(QtWidgets.QWidget):
         self._sizer3.addWidget(self._ratings, 0)
         self._sizer3.addStretch(1)
         self._sizer3.addWidget(self._open_file, 0)
-        self._sizer3.addWidget(self._options, 0)
+        # self._sizer3.addWidget(self._options, 0)
         #
         self._sizer4.addWidget(self._convention, 0)
         self._sizer4.addWidget(self._refactor, 0)

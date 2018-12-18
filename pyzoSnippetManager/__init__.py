@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-# Snippet source
+# Python snippets based on Visual Studio Code snippets
+
+# Main snippet source
 # https://github.com/cstrap/python-snippets
+# Inspiration
 # https://realpython.com/primer-on-python-decorators/#functions
 # https://realpython.com/python-logging/
 
@@ -23,12 +26,12 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         # Make sure there is a configuration entry for this tool
         # The pyzo tool manager makes sure that there is an entry in
         # config.tools before the tool is instantiated.
-        toolId = self.__class__.__name__.lower()
-        self._config = pyzo.config.tools[toolId]
-        if not hasattr(self._config, 'showTypes'):
-            self._config.showTypes = ['class', 'def', 'cell', 'todo']
-        if not hasattr(self._config, 'level'):
-            self._config.level = 2
+        # toolId = self.__class__.__name__.lower()
+        # self._config = pyzo.config.tools[toolId]
+        # if not hasattr(self._config, 'showTypes'):
+        #     self._config.showTypes = ['class', 'def', 'cell', 'todo']
+        # if not hasattr(self._config, 'level'):
+        #     self._config.level = 2
 
         # Keep track of sorting order
         self._sort_order = None
@@ -45,7 +48,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
 
         # Create button for sorting
         self._sortbut = QtWidgets.QToolButton(self)
-        self._sortbut.setToolButtonStyle (QtCore.Qt.ToolButtonTextBesideIcon)
+        self._sortbut.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self._sortbut.setArrowType(QtCore.Qt.DownArrow)
         self._sortbut.setStyleSheet("QToolButton { border: none; padding: 0px; }")
         self._sortbut.setText('A-z')
@@ -56,7 +59,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         # Create button ofor opening snippet file in the editor
         self._open_file = QtWidgets.QToolButton(self)
         self._open_file.setIcon(pyzo.icons.page_white_text)
-        self._open_file.setIconSize(QtCore.QSize(16,16))
+        self._open_file.setIconSize(QtCore.QSize(16, 16))
         self._open_file.setStyleSheet("QToolButton { border: none; padding: 0px; }")
         self._open_file.setToolTip("Open snippet file")
         # event
@@ -96,11 +99,6 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._sizer2.addWidget(self._sortbut, 0)
         self._sizer2.addStretch(1)
         self._sizer2.addWidget(self._open_file, 0)
-        # self._sizer2.addWidget(self._navbut_forward, 0)
-        # self._sizer2.addStretch(1)
-        # self._sizer2.addWidget(self._slider, 6)
-        # self._sizer2.addStretch(1)
-        # self._sizer2.addWidget(self._options, 0)
         #
         self.setLayout(self._sizer1)
 
@@ -117,7 +115,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._snippet = {}
         self._part = {}
         for f in os.listdir(self.snippet_folder):
-            # print('\nF -------------------: ' + str(f))
+            
             root = f.replace('.json', '').title()
             sf = os.path.join(self.snippet_folder, f)
             with open(sf) as snippet:
@@ -126,7 +124,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
                 root = QtWidgets.QTreeWidgetItem(self._tree, [root])
                 for k, v in self._part.items():
                     for kk, vv in v.items():
-                        # print('V: ' + str(v))
+                        
                         QtWidgets.QTreeWidgetItem(root, [str(kk), str(vv['prefix'])])
                 self._part.clear()
         self._tree.sortItems(0, QtCore.Qt.AscendingOrder)
@@ -226,7 +224,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
     #     # What to show
     #     type = action.text().split(' ',1)[1]
 
-   ##       # Swap
+          # Swap
     #     if type in self._config.showTypes:
     #         while type in self._config.showTypes:
     #             self._config.showTypes.remove(type)
