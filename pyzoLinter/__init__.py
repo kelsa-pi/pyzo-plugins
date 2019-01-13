@@ -3,6 +3,7 @@
 # Static code analysis tool - pylint
 
 import os
+import sys
 
 import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
@@ -25,12 +26,13 @@ class PyzoLinter(QtWidgets.QWidget):
         # The pyzo tool manager makes sure that there is an entry in
         # config.tools before the tool is instantiated.
 
-        # toolId = self.__class__.__name__.lower()
-        # self._config = pyzo.config.tools[toolId]
-        # if not hasattr(self._config, 'showTypes'):
-        #     self._config.showTypes = ['class', 'def', 'cell', 'todo']
-        # if not hasattr(self._config, 'level'):
-        #     self._config.level = 2
+        toolId = self.__class__.__name__.lower()
+        self._config = pyzo.config.tools[toolId]
+        if not hasattr(self._config, 'fontSize'):
+            if sys.platform == 'darwin':
+                self._config.fontSize = 12
+            else:
+                self._config.fontSize = 10
 
         # Keep track of linter output
         self.output = ''
@@ -40,32 +42,34 @@ class PyzoLinter(QtWidgets.QWidget):
 
         self.process = None
         self.locale_codec = pyzo.QtCore.QTextCodec.codecForLocale()
+        
+        self.cur_dir_path = ''
 
-        # Create button for reload current file name
+        # Create button for parsing scope
         self._reload = QtWidgets.QToolButton(self)
         self._reload.setIcon(pyzo.icons.arrow_refresh)
-        self._reload.setToolTip("Select file")
+        self._reload.setToolTip("Parse")
         # event
-        self._reload.clicked.connect(self.getCurrentFileName)
+        self._reload.clicked.connect(self.start)
 
-        # Create file path line edit
-        self._file_line = QtWidgets.QLineEdit(self)
-        self._file_line.setReadOnly(False)
-        self._file_line.setToolTip('File for linting')
+        # Create combo box Scope
+        scope_list = ['Current document', 'Current document directory']
+        self._scope = QtWidgets.QComboBox(self)
+        self._scope.setToolTip("Get by index")
+        self._scope.addItems(scope_list)
 
-        # Create button for select file for analise
-        self._select_file = QtWidgets.QToolButton(self)
-        self._select_file.setIcon(pyzo.icons.folder_page)
-        self._select_file.setToolTip("Select file")
+        # Create font options menu
+        self._font_options = QtWidgets.QToolButton(self)
+        self._font_options.setIcon(pyzo.icons.wrench)
+        self._font_options.setIconSize(QtCore.QSize(16, 16))
+        self._font_options.setPopupMode(self._font_options.InstantPopup)
+        self._font_options.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self._font_options._menu = QtWidgets.QMenu()
+        self._font_options.setMenu(self._font_options._menu)
+        self.onFontOptionsPress()  # create menu now
         # event
-        self._select_file.clicked.connect(self.onSelectFile)
-
-        # Create button for select file for analise
-        self._run = QtWidgets.QToolButton(self)
-        self._run.setIcon(pyzo.icons.arrow_right)
-        self._run.setToolTip("Start")
-        # event
-        self._run.clicked.connect(self.start)
+        self._font_options.pressed.connect(self.onFontOptionsPress)
+        self._font_options._menu.triggered.connect(self.onFontOptionMenuTiggered)
 
         # Create button for opening output file in the editor
         self._open_file = QtWidgets.QToolButton(self)
@@ -76,32 +80,11 @@ class PyzoLinter(QtWidgets.QWidget):
         # event
         self._open_file.clicked.connect(self.onOpenOutputFile)
 
-        # Empty label
-        self._empty = QtWidgets.QLabel(self)
-
-        # Create options button
-        # self._options = QtWidgets.QToolButton(self)
-        # self._options.setIcon(pyzo.icons.filter)
-        # self._options.setIconSize(QtCore.QSize(16, 16))
-        # self._options.setPopupMode(self._options.InstantPopup)
-        # self._options.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-
-        # Create options menu
-        # self._options._menu = QtWidgets.QMenu()
-        # self._options.setMenu(self._options._menu)
-
-        # Result label
-        self._result = QtWidgets.QLabel(self)
-        self._result.setText("Result: ")
-
         # Ratings label
         self._ratings = QtWidgets.QLabel(self)
         self._ratings.setText("")
-        self._ratings.setMinimumHeight(30)
-        self._ratings.setMinimumWidth(200)
         self._ratings.setAlignment(QtCore.Qt.AlignCenter)
-        ss = 'QLabel{color: red;background-color: #FFFFE0;border-style: outset;border-width: 1px;border-radius: 10px; \
-              font: bold 18px;padding: 6px;}'
+        ss = 'QLabel{color: black;background-color: #FFFFE0;font : bold;}'
         self._ratings.setStyleSheet(ss)
 
         # Create radio box Convention
@@ -133,15 +116,14 @@ class PyzoLinter(QtWidgets.QWidget):
 
         # Create tree widget
         self._tree = QtWidgets.QTreeWidget(self)
-        self._tree.setColumnCount(3)
-        self._tree.setHeaderLabels(["Description", "Code", "Line"])
+        self._tree.setColumnCount(5)
+        self._tree.setHeaderLabels(["Description", "File", "Code", "Line", "Column"])
         self._tree.setColumnWidth(0, 400)
         self._tree.setColumnWidth(1, 80)
         self._tree.setHeaderHidden(False)
         self._tree.setSortingEnabled(True)
         self._tree.sortItems(1, QtCore.Qt.AscendingOrder)
         self._tree.sortItems(2, QtCore.Qt.AscendingOrder)
-        # self._tree.setAlternatingRowColors(True)
         self._tree.setRootIsDecorated(False)
         # event
         self._tree.clicked.connect(self.onItemClicked)
@@ -149,7 +131,6 @@ class PyzoLinter(QtWidgets.QWidget):
         # Create two sizers
         self._sizer1 = QtWidgets.QVBoxLayout(self)
         self._sizer2 = QtWidgets.QHBoxLayout()
-        self._sizer3 = QtWidgets.QHBoxLayout()
         self._sizer4 = QtWidgets.QHBoxLayout()
         #
         self._sizer1.setSpacing(2)
@@ -157,31 +138,21 @@ class PyzoLinter(QtWidgets.QWidget):
 
         # Set layout
         self._sizer1.addLayout(self._sizer2, 0)
-        self._sizer1.addLayout(self._sizer3, 0)
         self._sizer1.addLayout(self._sizer4, 0)
         self._sizer1.addWidget(self._tree, 1)
         #
-        self._sizer2.addWidget(self._reload, 1)
-        self._sizer2.addWidget(self._file_line, 1)
-        self._sizer2.addWidget(self._select_file, 0)
-        self._sizer2.addWidget(self._run, 0)
-        self._sizer2.addWidget(self._empty, 0)
-        #
-        self._sizer3.addWidget(self._result, 0)
-        self._sizer3.addWidget(self._ratings, 0)
-        self._sizer3.addStretch(1)
-        self._sizer3.addWidget(self._open_file, 0)
-        # self._sizer3.addWidget(self._options, 0)
+        self._sizer2.addWidget(self._reload, 0)
+        self._sizer2.addWidget(self._scope, 0)
+        self._sizer2.addWidget(self._ratings, 0)
+        self._sizer2.addWidget(self._font_options, 0)
         #
         self._sizer4.addWidget(self._convention, 0)
         self._sizer4.addWidget(self._refactor, 0)
         self._sizer4.addWidget(self._warning, 0)
         self._sizer4.addWidget(self._error, 0)
+        self._sizer4.addWidget(self._open_file, 0)
         #
         self.setLayout(self._sizer1)
-
-        # Set current file name
-        self.getCurrentFileName()
 
     def onRadioChangeState(self, radiobox):
         """ Filter the tree
@@ -190,11 +161,12 @@ class PyzoLinter(QtWidgets.QWidget):
         child_count = root.childCount()
         for i in range(child_count):
             item = root.child(i)
-            code = item.text(1)
+            # code number column
+            code = item.text(2)
+
             # Convention
             if radiobox.text().startswith("Convention") and radiobox.isChecked() is True:
                 if code[0] == 'C':
-
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
                 else:
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), True)
@@ -220,17 +192,6 @@ class PyzoLinter(QtWidgets.QWidget):
                 else:
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), True)
 
-    def getCurrentFileName(self):
-        """ getCurrentFileName()
-        Add current file name in the textbox
-        """
-        try:
-            editor = pyzo.editors.getCurrentEditor()
-            self._file_line.setText(editor.filename)
-            self.reset()
-        except:
-            pass
-
     def reset(self):
         """ reset()
         Reset widgets
@@ -242,30 +203,42 @@ class PyzoLinter(QtWidgets.QWidget):
         self._warning.setText(WARNING)
         self._error.setText(ERROR)
         self._tree.clear()
+        self.output = ''
+        self.cur_dir_path = ''
 
     def start(self):
         """ start()
         Start code inspection
         """
         self.reset()
-        self.output = ''
-        filename = self._file_line.text()
 
-        pylint_exe = 'pylint'
-        params = ['-rn',
-                  '--msg-template', '{path}:{line}:{column}: {msg_id}: {msg} ({symbol})',
-                  filename
-                  ]
         self.process = pyzo.QtCore.QProcess(self)
+        self.process.finished.connect(self.showOutput)
         self.process.setProcessChannelMode(pyzo.QtCore.QProcess.SeparateChannels)
-        self.process.setWorkingDirectory(os.path.dirname(filename))
-
         self.process.readyReadStandardOutput.connect(self.readOutput)
         self.process.readyReadStandardError.connect(lambda: self.read_output(error=True))
 
-        self.process.finished.connect(self.showOutput)
-        self.process.start(pylint_exe, params)
+        editor = pyzo.editors.getCurrentEditor()
+        scope = self._scope.currentText()
+        self.cur_dir_path = os.path.dirname(os.path.abspath(editor.filename))
+        
+        if scope == 'Current document':
+            pylint_exe = 'pylint'
+            params = ['-rn',
+                    '--msg-template', '{path}:{line}:{column}: {msg_id}: {msg} ({symbol})',
+                    editor.filename
+                     ]
+        elif scope == 'Current document directory':
+            
+            pylint_exe = 'pylint'
+            params = ['-rn',
+                    '--msg-template', '{path}:{line}:{column}: {msg_id}: {msg} ({symbol})',
+                    self.cur_dir_path
+                    ]
 
+        self.process.start(pylint_exe, params)
+        print('SELF.CUR_DIR_PATH: ' + str(self.cur_dir_path))
+        
     def readOutput(self):
 
         qba = pyzo.QtCore.QByteArray()
@@ -279,6 +252,7 @@ class PyzoLinter(QtWidgets.QWidget):
         """ showOutput()
         Fill the treee
         """
+
         nC = 0
         nR = 0
         nW = 0
@@ -292,11 +266,14 @@ class PyzoLinter(QtWidgets.QWidget):
         for line in self.output.splitlines():
             l = line.split(':')
             try:
+                path = l[0].strip()
+                path = path.replace(self.cur_dir_path, '')[1:]
                 line = l[1].strip()
-                # col = l[2].strip()
+                col = l[2].strip()
                 msg_id = l[3].strip()
                 msg = l[4].strip()
-                QtWidgets.QTreeWidgetItem(self._tree, [msg, msg_id, line])
+                QtWidgets.QTreeWidgetItem(self._tree, [msg, path, msg_id, line, col])
+
                 if msg_id[0] == 'C':
                     nC += 1
                 elif msg_id[0] == 'R':
@@ -324,32 +301,64 @@ class PyzoLinter(QtWidgets.QWidget):
 
         self.onRadioChangeState(self._convention)
 
-    def onSelectFile(self):
-        """ onSelectFile()
-        Select file for code inspection
-        """
-        self.reset()
-        filename = self._file_line.text()
-        start_dir = os.path.dirname(filename)
-        fname = pyzo.QtWidgets.QFileDialog.getOpenFileName(self, 'Select file', start_dir)
-        if fname[0]:
-            self._file_line.setText(fname[0])
-        else:
-            self.getCurrentFileName()
-
     def onItemClicked(self):
         """ onItemClicked()
         If item clicked in the tree select a line in editor
         """
         editor = pyzo.editors.getCurrentEditor()
-        lineno = self._tree.currentItem().text(2)
-        cursor = QtGui.QTextCursor(editor.document().findBlockByLineNumber(int(lineno) - 1))
-        cursor.select(QtGui.QTextCursor.LineUnderCursor)
-        editor.setTextCursor(cursor)
-
+        fname = self._tree.currentItem().text(1)
+        filepath = os.path.join(self.cur_dir_path, fname)
+        lineno = self._tree.currentItem().text(3)
+        
+        # current editor path = selected file in the tree
+        if editor.filename == filepath:
+            cursor = QtGui.QTextCursor(editor.document().findBlockByLineNumber(int(lineno) - 1))
+            cursor.select(QtGui.QTextCursor.LineUnderCursor)
+            editor.setTextCursor(cursor)
+        else:
+            # load file in the editor
+            pyzo.editors.loadFile(filepath)
+            editor = pyzo.editors.getCurrentEditor()
+            cursor = QtGui.QTextCursor(editor.document().findBlockByLineNumber(int(lineno) - 1))
+            cursor.select(QtGui.QTextCursor.LineUnderCursor)
+            editor.setTextCursor(cursor)
+            
     def onOpenOutputFile(self):
         """ onOpenOutputFile()
         Open output file in editor
         """
         fpath = os.path.join(self.output_folder, "pylinter_output.txt")
         pyzo.editors.loadFile(fpath)
+
+    def onFontOptionsPress(self):
+        """ Create the menu for the button, Do each time to make sure
+        the checks are right. """
+
+        # Get menu
+        menu = self._font_options._menu
+        menu.clear()
+
+        # Add font size options
+        currentSize = self._config.fontSize
+        for i in range(8, 15):
+            action = menu.addAction('font-size: %ipx' % i)
+            action.setCheckable(True)
+            action.setChecked(i == currentSize)
+
+    def onFontOptionMenuTiggered(self, action):
+        """  The user decides what to show in the structure. """
+        # Get text
+        text = action.text().lower()
+
+        if 'size' in text:
+            # Get font size
+            size = int(text.split(':', 1)[1][:-2])
+            # Update
+            self._config.fontSize = size
+            # Set font size
+            font = self._tree.font()
+            font.setPointSize(self._config.fontSize)
+            self._tree.setFont(QtGui.QFont(font))
+
+        self._tree.updateGeometries()
+
