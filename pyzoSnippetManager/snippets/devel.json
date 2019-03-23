@@ -1,0 +1,22 @@
+{
+    "Debug decorator": {
+        "prefix": "@d",
+        "body": "\nimport functools\n\ndef debug(func):\n\t@functools.wraps(func)\n\tdef wrapper_debug(*args, **kwargs):\n\t\targs_repr = [repr(a) for a in args]\n\t\tkwargs_repr = [f'{k}={v!r}' for k, v in kwargs.items()]\n\t\tsignature = ', '.join(args_repr + kwargs_repr)\n\t\tprint(f'Calling {func.__name__}({signature})')\n\t\tvalue = func(*args, **kwargs)\n\t\tprint(f'{func.__name__!r} returned {value!r}')\n\t\treturn value\n\treturn wrapper_debug"
+    },
+    
+    "Decorator snippet": {
+        "prefix": "@s",
+        "body": "\nimport functools\n\ndef decorator(func):\n\t@functools.wraps(func)\n\tdef wrapper_decorator(*args, **kwargs):\n\t\t# Do something before\n\t\tvalue = func(*args, **kwargs)\n\t\t# Do something after\n\t\treturn value\n\treturn wrapper_decorator"
+    },
+    
+    "Logging": {
+        "prefix": "logb",
+        "body": "\nimport logging\n\nlogging.basicConfig(filename='module.log',\n\t\t\t\t\tlevel=logging.DEBUG,\n\t\t\t\t\tformat='%(asctime)s - %(name)s - %(levelname)s - %(message)s')"
+    },
+
+    "Timing decorator": {
+        "prefix": "@t",
+        "body": "\nimport functools\nimport time\n\ndef timer(func):\n\t@functools.wraps(func)\n\tdef wrapper_timer(*args, **kwargs):\n\t\tstart_time = time.perf_counter()\n\t\tvalue = func(*args, **kwargs)\n\t\tend_time = time.perf_counter()\n\t\trun_time = end_time - start_time\n\t\tprint(f'Finished {func.__name__!r} in {run_time:.4f} secs')\n\t\treturn value\n\treturn wrapper_timer"
+    }
+    
+}

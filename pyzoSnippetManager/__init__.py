@@ -16,7 +16,7 @@ import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate
 
-tool_name = translate('pyzoSnippetManager', 'Snippet Manager')
+tool_name = translate("pyzoSnippetManager", "Snippet Manager")
 tool_summary = "Shows the structure of your source code."
 
 
@@ -37,7 +37,9 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._sort_order = None
 
         # Snippet folder
-        self.snippet_folder = os.path.join(pyzo.appDataDir, 'tools', 'pyzoSnippetManager', 'snippets')
+        self.snippet_folder = os.path.join(
+            pyzo.appDataDir, "tools", "pyzoSnippetManager", "snippets"
+        )
 
         # Create button for reload
         self._reload = QtWidgets.QToolButton(self)
@@ -50,8 +52,10 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._sortbut = QtWidgets.QToolButton(self)
         self._sortbut.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self._sortbut.setArrowType(QtCore.Qt.DownArrow)
-        self._sortbut.setStyleSheet("QToolButton { border: none; padding: 0px; }")
-        self._sortbut.setText('A-z')
+        self._sortbut.setStyleSheet(
+            "QToolButton { border: none; padding: 0px; }"
+        )
+        self._sortbut.setText("A-z")
         self._sortbut.setToolTip("Sorted")
         # event
         self._sortbut.clicked.connect(self.onSortPress)
@@ -60,7 +64,9 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._open_file = QtWidgets.QToolButton(self)
         self._open_file.setIcon(pyzo.icons.page_white_text)
         self._open_file.setIconSize(QtCore.QSize(16, 16))
-        self._open_file.setStyleSheet("QToolButton { border: none; padding: 0px; }")
+        self._open_file.setStyleSheet(
+            "QToolButton { border: none; padding: 0px; }"
+        )
         self._open_file.setToolTip("Open snippet file")
         # event
         self._open_file.clicked.connect(self.onOpenFile)
@@ -84,6 +90,8 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         self._tree.setHeaderHidden(True)
         self._tree.setSortingEnabled(True)
         self._tree.sortItems(0, QtCore.Qt.AscendingOrder)
+        # style
+        self.setWidgetTextStyle(self._tree)
 
         # Create two sizers
         self._sizer1 = QtWidgets.QVBoxLayout(self)
@@ -110,13 +118,50 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         # Bind to events
         self._tree.clicked.connect(self.onItemClicked)
 
+    # Style
+    def getThemeItem(self, item="editor.text"):
+        theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
+        for k, v in theme.items():
+            key = k
+            val_dict = {}
+            if key == item:
+                for x in v.split(","):
+                    item = x.split(":")
+                    item_key = item[0].strip()
+                    item_value = item[1].strip()
+                    val_dict[item_key] = item_value
+                break
+        return val_dict
+
+    def setWidgetStyleSheet(self, widget, keys, values):
+        wdg = str(type(widget))
+        wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
+        t = ""
+        for n in range(len(keys)):
+            t = t + keys[n] + ":" + values[n] + ";"
+        ss = wdg + "{" + t + "}"
+        widget.setStyleSheet(ss)
+        widget.setAutoFillBackground(True)
+
+    def setWidgetTextStyle(self, widget):
+        theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
+        background = self.getThemeItem(item="editor.text")["back"]
+        textcolor = self.getThemeItem(item="editor.text")["fore"]
+        wdg = str(type(widget))
+        wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
+        ss = wdg + "{background-color:%s; color:%s;}" % (background, textcolor)
+        widget.setStyleSheet(ss)
+        widget.setAutoFillBackground(True)
+
+    # ---------
+
     def fillTree(self):
         # fill tree
         self._snippet = {}
         self._part = {}
         for f in os.listdir(self.snippet_folder):
-            
-            root = f.replace('.json', '').title()
+
+            root = f.replace(".json", "").title()
             sf = os.path.join(self.snippet_folder, f)
             with open(sf) as snippet:
                 self._part[root] = load(snippet)
@@ -124,39 +169,41 @@ class PyzoSnippetManager(QtWidgets.QWidget):
                 root = QtWidgets.QTreeWidgetItem(self._tree, [root])
                 for k, v in self._part.items():
                     for kk, vv in v.items():
-                        
-                        QtWidgets.QTreeWidgetItem(root, [str(kk), str(vv['prefix'])])
+
+                        QtWidgets.QTreeWidgetItem(
+                            root, [str(kk), str(vv["prefix"])]
+                        )
                 self._part.clear()
         self._tree.sortItems(0, QtCore.Qt.AscendingOrder)
-        self._sort_order = 'ASC'
-        self._sortbut.setText('A-z')
+        self._sort_order = "ASC"
+        self._sortbut.setText("A-z")
         self._sortbut.setArrowType(QtCore.Qt.DownArrow)
 
     def _insertSnippet(self, body):
 
         if isinstance(body, list):
-            txt = ''
+            txt = ""
             for i, t in enumerate(body):
-                txt = body[i] + '\n'
+                txt = body[i] + "\n"
             body = txt
 
-        body = body.replace('\t', '    ')
-        body = body.replace('$0', '')
+        body = body.replace("\t", "    ")
+        body = body.replace("$0", "")
 
         # Find patern ${num : text}
         # TODO: nested pattern ${2: ${3:Exception} as ${4:e}}
         d = {}
-        pattern = '\$\{\d.*?}'
+        pattern = "\$\{\d.*?}"
         match = re.findall(pattern, body)
         for fnd in match:
-            fnd_split = fnd.split(':')
+            fnd_split = fnd.split(":")
             # key
             key = fnd_split[0]
-            key = key.replace('{', '')
+            key = key.replace("{", "")
             body = body.replace(fnd, key)
             # value
             value = fnd_split[1]
-            value = value.replace('}', '')
+            value = value.replace("}", "")
             # dict
             d[key] = value
 
@@ -179,7 +226,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
 
         # Find target text in the editor
         text = editor.toPlainText()
-        pattern = '$1'
+        pattern = "$1"
 
         if pattern in d:
             # find text
@@ -199,7 +246,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         try:
             parent = item.parent()
             parent_val = self._tree.indexFromItem(parent, 0).data()
-            code = self._snippet[parent_val][item.text(0)]['body']
+            code = self._snippet[parent_val][item.text(0)]["body"]
             self._insertSnippet(code)
         except:
             pass
@@ -224,7 +271,7 @@ class PyzoSnippetManager(QtWidgets.QWidget):
     #     # What to show
     #     type = action.text().split(' ',1)[1]
 
-          # Swap
+    # Swap
     #     if type in self._config.showTypes:
     #         while type in self._config.showTypes:
     #             self._config.showTypes.remove(type)
@@ -240,16 +287,16 @@ class PyzoSnippetManager(QtWidgets.QWidget):
 
         self._tree.setSortingEnabled(True)
 
-        if self._sort_order in [None, 'DSC']:
+        if self._sort_order in [None, "DSC"]:
             self._tree.sortItems(0, QtCore.Qt.AscendingOrder)
-            self._sort_order = 'ASC'
-            self._sortbut.setText('A-z')
+            self._sort_order = "ASC"
+            self._sortbut.setText("A-z")
             self._sortbut.setArrowType(QtCore.Qt.DownArrow)
 
-        elif self._sort_order == 'ASC':
+        elif self._sort_order == "ASC":
             self._tree.sortItems(0, QtCore.Qt.DescendingOrder)
-            self._sort_order = 'DSC'
-            self._sortbut.setText('Z-a')
+            self._sort_order = "DSC"
+            self._sortbut.setText("Z-a")
             self._sortbut.setArrowType(QtCore.Qt.UpArrow)
 
     def onOpenFile(self):
@@ -259,6 +306,6 @@ class PyzoSnippetManager(QtWidgets.QWidget):
         except:
             return
 
-        fname = '{}.json'.format(item.lower())
+        fname = "{}.json".format(item.lower())
         fpath = os.path.join(self.snippet_folder, fname)
         pyzo.editors.loadFile(fpath)

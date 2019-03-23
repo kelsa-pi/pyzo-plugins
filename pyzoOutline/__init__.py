@@ -10,9 +10,8 @@ import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate
 
-tool_name = translate('pyzoOutline', 'Outline')
+tool_name = translate("pyzoOutline", "Outline")
 tool_summary = "Shows the structure of your source code."
-
 
 
 class Navigation:
@@ -30,9 +29,9 @@ class PyzoOutline(QtWidgets.QWidget):
         # config.tools before the tool is instantiated.
         toolId = self.__class__.__name__.lower()
         self._config = pyzo.config.tools[toolId]
-        if not hasattr(self._config, 'showTypes'):
-            self._config.showTypes = ['class', 'def', 'cell', 'todo']
-        if not hasattr(self._config, 'level'):
+        if not hasattr(self._config, "showTypes"):
+            self._config.showTypes = ["class", "def", "cell", "todo"]
+        if not hasattr(self._config, "level"):
             self._config.level = 2
 
         # Keep track of clicks so we can "go back"
@@ -45,21 +44,27 @@ class PyzoOutline(QtWidgets.QWidget):
         self._navbut_back = QtWidgets.QToolButton(self)
         self._navbut_back.setIcon(pyzo.icons.arrow_left)
         self._navbut_back.setIconSize(QtCore.QSize(16, 16))
-        self._navbut_back.setStyleSheet("QToolButton { border: none; padding: 0px; }")
+        self._navbut_back.setStyleSheet(
+            "QToolButton { border: none; padding: 0px; }"
+        )
         self._navbut_back.clicked.connect(self.onNavBack)
         #
         self._navbut_forward = QtWidgets.QToolButton(self)
         self._navbut_forward.setIcon(pyzo.icons.arrow_right)
         self._navbut_forward.setIconSize(QtCore.QSize(16, 16))
-        self._navbut_forward.setStyleSheet("QToolButton { border: none; padding: 0px; }")
+        self._navbut_forward.setStyleSheet(
+            "QToolButton { border: none; padding: 0px; }"
+        )
         self._navbut_forward.clicked.connect(self.onNavForward)
 
         # Create button for sorting
         self._sortbut = QtWidgets.QToolButton(self)
         self._sortbut.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self._sortbut.setArrowType(QtCore.Qt.DownArrow)
-        self._sortbut.setStyleSheet("QToolButton { border: none; padding: 0px; }")
-        self._sortbut.setText('A-z')
+        self._sortbut.setStyleSheet(
+            "QToolButton { border: none; padding: 0px; }"
+        )
+        self._sortbut.setText("A-z")
         self._sortbut.setToolTip("Sorted")
         self._sortbut.clicked.connect(self.onSortPress)
 
@@ -85,9 +90,9 @@ class PyzoOutline(QtWidgets.QWidget):
         self._slider.valueChanged.connect(self.updateStructure)
 
         # Create options button
-        #self._options = QtWidgets.QPushButton(self)
-        #self._options.setText('Options'))
-        #self._options.setToolTip("What elements to show.")
+        # self._options = QtWidgets.QPushButton(self)
+        # self._options.setText('Options'))
+        # self._options.setToolTip("What elements to show.")
         self._options = QtWidgets.QToolButton(self)
         self._options.setIcon(pyzo.icons.filter)
         self._options.setIconSize(QtCore.QSize(16, 16))
@@ -102,8 +107,14 @@ class PyzoOutline(QtWidgets.QWidget):
         self._tree = QtWidgets.QTreeWidget(self)
         self._tree.setHeaderHidden(True)
         self._tree.setSortingEnabled(False)
-        self._tree.itemCollapsed.connect(self.updateStructure) # keep expanded
+        self._tree.itemCollapsed.connect(self.updateStructure)  # keep expanded
         self._tree.itemClicked.connect(self.onItemClick)
+        # set widget stye
+        background = self.getThemeItem(item="editor.text")
+        textcolor = self.getThemeItem(item="syntax.identifier")
+        styleKeys = ["background-color", "color"]
+        styleValues = [background["back"], textcolor["fore"]]
+        self.setWidgetStyleSheet(self._tree, styleKeys, styleValues)
 
         # Create two sizers
         self._sizer1 = QtWidgets.QVBoxLayout(self)
@@ -139,8 +150,45 @@ class PyzoOutline(QtWidgets.QWidget):
         # Start
         # When the tool is loaded, the editorStack is already done loading
         # all previous files and selected the appropriate file.
-        self.onOptionsPress() # Create menu now
+        self.onOptionsPress()  # Create menu now
         self.onEditorsCurrentChanged()
+
+    # Style
+    def getThemeItem(self, item="editor.text"):
+        theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
+        for k, v in theme.items():
+            key = k
+            val_dict = {}
+            if key == item:
+                for x in v.split(","):
+                    item = x.split(":")
+                    item_key = item[0].strip()
+                    item_value = item[1].strip()
+                    val_dict[item_key] = item_value
+                break
+        return val_dict
+
+    def setWidgetStyleSheet(self, widget, keys, values):
+        wdg = str(type(widget))
+        wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
+        t = ""
+        for n in range(len(keys)):
+            t = t + keys[n] + ":" + values[n] + ";"
+        ss = wdg + "{" + t + "}"
+        widget.setStyleSheet(ss)
+        widget.setAutoFillBackground(True)
+
+    def setWidgetTextStyle(self, widget):
+        theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
+        background = self.getThemeItem(item="editor.text")["back"]
+        textcolor = self.getThemeItem(item="editor.text")["fore"]
+        wdg = str(type(widget))
+        wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
+        ss = wdg + "{background-color:%s; color:%s;}" % (background, textcolor)
+        widget.setStyleSheet(ss)
+        widget.setAutoFillBackground(True)
+
+    # ---------
 
     def onOptionsPress(self):
         """ Create the menu for the button, Do each time to make sure
@@ -150,9 +198,9 @@ class PyzoOutline(QtWidgets.QWidget):
         menu = self._options._menu
         menu.clear()
 
-        for type in ['class', 'def', 'cell', 'todo', 'import', 'attribute']:
+        for type in ["class", "def", "cell", "todo", "import", "attribute"]:
             checked = type in self._config.showTypes
-            action = menu.addAction('Show %s'%type)
+            action = menu.addAction("Show %s" % type)
             action.setCheckable(True)
             action.setChecked(checked)
 
@@ -160,7 +208,7 @@ class PyzoOutline(QtWidgets.QWidget):
         """  The user decides what to show in the structure. """
 
         # What to show
-        type = action.text().split(' ', 1)[1]
+        type = action.text().split(" ", 1)[1]
 
         # Swap
         if type in self._config.showTypes:
@@ -171,7 +219,6 @@ class PyzoOutline(QtWidgets.QWidget):
 
         # Update
         self.updateStructure()
-
 
     def onEditorsCurrentChanged(self):
         """ Notify that the file is being parsed and make
@@ -191,12 +238,11 @@ class PyzoOutline(QtWidgets.QWidget):
             self._currentEditorId = id(editor)
 
             # Notify
-            text = translate('pyzoOutline', 'Parsing ') + editor._name + ' ...'
+            text = translate("pyzoOutline", "Parsing ") + editor._name + " ..."
             QtWidgets.QTreeWidgetItem(self._tree, [text])
 
             # Try getting the  structure right now
             self.updateStructure()
-
 
     def _getCurrentNav(self):
         if not self._currentEditorId:
@@ -276,10 +322,44 @@ class PyzoOutline(QtWidgets.QWidget):
         ln += 1  # is ln as in line number area
 
         # Define colours
-        colours = {'cell':'#b58900', 'class':'#cb4b16', 'def':'#073642',
-                   'attribute':'#657b83', 'import':'#268bd2', 'todo':'#d33682',
-                   'nameismain':'#859900'}
-        #colours = {'cell':'#007F00', 'class':'#0000FF', 'def':'#007F7F',
+
+        colours = {
+            "cell": self.getThemeItem(item="syntax.python.cellcomment")["fore"],
+            "class": self.getThemeItem(item="syntax.classname")["fore"],
+            "def": self.getThemeItem(item="syntax.functionname")["fore"],
+            "attribute": self.getThemeItem(item="syntax.identifier")["fore"],
+            "import": self.getThemeItem(item="syntax.unterminatedstring")[
+                "fore"
+            ],
+            "todo": self.getThemeItem(item="syntax.todocomment")["fore"],
+            "nameismain": self.getThemeItem(item="syntax.keyword")[
+                "fore"
+            ],  # "#859900",
+        }
+
+        bolds = {
+            "cell": self.getThemeItem(item="syntax.python.cellcomment")["bold"],
+            "class": self.getThemeItem(item="syntax.classname")["bold"],
+            "def": self.getThemeItem(item="syntax.functionname")["bold"],
+            "attribute": self.getThemeItem(item="syntax.identifier")["bold"],
+            "import": self.getThemeItem(item="syntax.unterminatedstring")[
+                "bold"
+            ],
+            "todo": self.getThemeItem(item="syntax.todocomment")["bold"],
+            "nameismain": self.getThemeItem(item="syntax.keyword")[
+                "bold"
+            ],  # "#859900",
+        }
+        # colours = {
+        #     "cell": "#b58900",
+        #     "class": "#cb4b16",
+        #     "def": "#073642",
+        #     "attribute": "#657b83",
+        #     "import": "#268bd2",
+        #     "todo": "#d33682",
+        #     "nameismain": "#859900",
+        # }
+        # colours = {'cell':'#007F00', 'class':'#0000FF', 'def':'#007F7F',
         #            'attribute':'#444444', 'import':'#8800BB', 'todo':'#FF3333',
         #            'nameismain':'#007F00'}
 
@@ -293,37 +373,44 @@ class PyzoOutline(QtWidgets.QWidget):
 
         # Define function to set items
         selectedItem = [None]
+
         def SetItems(parentItem, fictiveObjects, level):
             level += 1
             for object in fictiveObjects:
                 type = object.type
-                if type not in showTypes and type != 'nameismain':
+                if type not in showTypes and type != "nameismain":
                     continue
                 # Construct text
-                if type == 'import':
+                if type == "import":
                     text = "→ %s (%s)" % (object.name, object.text)
-                elif type == 'todo':
+                elif type == "todo":
                     text = object.name
-                elif type == 'nameismain':
+                elif type == "nameismain":
                     text = object.text
-                elif type == 'class':
+                elif type == "class":
                     text = object.name
-                elif type == 'def':
-                    text = object.name + '()'
-                elif type == 'attribute':
-                    text = '- ' + object.name
-                elif type in ('cell', '##', '#%%', '# %%'):
-                    type = 'cell'
-                    text = '## ' + object.name + ' ' * 120
+                elif type == "def":
+                    text = object.name + "()"
+                elif type == "attribute":
+                    text = "- " + object.name
+                elif type in ("cell", "##", "#%%", "# %%"):
+                    type = "cell"
+                    text = "## " + object.name + " " * 120
                 else:
                     text = "%s %s" % (type, object.name)
                 # Create item
                 thisItem = QtWidgets.QTreeWidgetItem(parentItem, [text])
                 color = QtGui.QColor(colours[object.type])
+                bold = bolds[object.type]
                 thisItem.setForeground(0, QtGui.QBrush(color))
                 font = thisItem.font(0)
-                font.setBold(True)
-                if type == 'cell':
+
+                if bold == "yes":
+                    font.setBold(True)
+                else:
+                    font.setBold(False)
+
+                if type == "cell":
                     font.setUnderline(True)
                 thisItem.setFont(0, font)
                 thisItem.linenr = object.linenr
@@ -345,8 +432,8 @@ class PyzoOutline(QtWidgets.QWidget):
         # Handle selected item
         selectedItem = selectedItem[0]
         if selectedItem:
-            selectedItem.setBackground(0, QtGui.QBrush(QtGui.QColor('#CCC')))
-            self._tree.scrollToItem(selectedItem) # ensure visible
+            selectedItem.setBackground(0, QtGui.QBrush(QtGui.QColor("#CCC")))
+            self._tree.scrollToItem(selectedItem)  # ensure visible
 
     def onReloadPress(self):
         self._tree.setSortingEnabled(False)
@@ -357,13 +444,13 @@ class PyzoOutline(QtWidgets.QWidget):
 
         self._tree.setSortingEnabled(True)
 
-        if self._sort_order in [None, 'DSC']:
+        if self._sort_order in [None, "DSC"]:
             self._tree.sortItems(0, QtCore.Qt.AscendingOrder)
-            self._sort_order = 'ASC'
-            self._sortbut.setText('A-z')
+            self._sort_order = "ASC"
+            self._sortbut.setText("A-z")
             self._sortbut.setArrowType(QtCore.Qt.DownArrow)
 
-        elif self._sort_order == 'ASC':
+        elif self._sort_order == "ASC":
             self._tree.sortItems(0, QtCore.Qt.DescendingOrder)
-            self._sort_order = 'DSC'
-            self._sortbut.setText('Z-a')
+            self._sort_order = "DSC"
+            self._sortbut.setText("Z-a")
