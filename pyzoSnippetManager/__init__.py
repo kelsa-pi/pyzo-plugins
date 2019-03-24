@@ -17,7 +17,7 @@ from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate
 
 tool_name = translate("pyzoSnippetManager", "Snippet Manager")
-tool_summary = "Shows the structure of your source code."
+tool_summary = "Shows the python snippets."
 
 
 class PyzoSnippetManager(QtWidgets.QWidget):
