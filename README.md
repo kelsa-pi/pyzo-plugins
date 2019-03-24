@@ -1,3 +1,6 @@
+
+This is a project that targets Pyzo IDE 4.7.1+
+
 ## External Commands
 
 Execute an external command that is not included in the Pyzo IDE.
