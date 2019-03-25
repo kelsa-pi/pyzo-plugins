@@ -1,6 +1,13 @@
 
 This is a project that targets Pyzo IDE 4.7.1+
 
+# Pyzo plugins
+
+<p align="center">
+    <img src="/images/pyzo_plugins.png">
+</p>
+
+
 ## External Commands
 
 Execute an external command that is not included in the Pyzo IDE.
