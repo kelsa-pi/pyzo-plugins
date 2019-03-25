@@ -3,7 +3,7 @@
 
 # Pyzo plugins
 
-This is a project that targets Pyzo IDE 4.7.1+
+This is a project that targets Pyzo IDE 4.7.1 +
 
 <p align="center">
     <img src="/image/pyzo_plugins.png">
