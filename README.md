@@ -43,3 +43,7 @@ Shows the python snippets.
 ## Toolbar
 
 Show the toolbar.
+
+## Installation
+
+Copy pyzoXXX directory to $PYZO_INSTALL_PATH/pyzo/tools or $USER/.pyzo/toolsdirectory.
