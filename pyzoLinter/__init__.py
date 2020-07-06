@@ -355,7 +355,7 @@ class PyzoLinter(QtWidgets.QWidget):
             l = line.split(":")
             try:
                 path = l[0].strip()
-                path = path.replace(self.cur_dir_path, "")[1:]
+                path = path.replace(self.cur_dir_path, "")[0:] #Edited to fix.
                 line = l[1].strip()
                 col = l[2].strip()
                 msg_id = l[3].strip()
@@ -397,7 +397,7 @@ class PyzoLinter(QtWidgets.QWidget):
         If item clicked in the tree select a line in editor
         """
         editor = pyzo.editors.getCurrentEditor()
-        fname = self._tree.currentItem().text(1)
+        fname = self._tree.currentItem().text(1).split("/")[-1] #Edited to fix.
         filepath = os.path.join(self.cur_dir_path, fname)
         lineno = self._tree.currentItem().text(3)
 
