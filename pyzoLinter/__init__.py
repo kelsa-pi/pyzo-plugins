@@ -12,6 +12,7 @@ from pyzo import translate
 tool_name = translate("pyzoLinter", "Linter")
 tool_summary = "Shows the structure of your source code."
 
+ALL = "All Issues"
 CONVENTION = "Convention"
 REFACTOR = "Refactor"
 WARNING = "Warning"
@@ -102,10 +103,15 @@ class PyzoLinter(QtWidgets.QWidget):
         ss = "QLabel{color: black;background-color: #FFFFE0;font : bold;}"
         self._ratings.setStyleSheet(ss)
 
+        # Create radio box All
+        self._all = QtWidgets.QRadioButton(self)
+        self._all.setText(ALL)
+        self._all.setChecked(True)
+        self._all.setToolTip(ALL)
+
         # Create radio box Convention
         self._convention = QtWidgets.QRadioButton(self)
         self._convention.setText(CONVENTION)
-        self._convention.setChecked(True)
         self._convention.setToolTip(CONVENTION)
 
         # Create radio box Refactor
@@ -124,6 +130,9 @@ class PyzoLinter(QtWidgets.QWidget):
         self._error.setToolTip(ERROR)
 
         # Radio box event
+        self._all.toggled.connect(
+            lambda: self.onRadioChangeState(self._all)
+        )
         self._convention.toggled.connect(
             lambda: self.onRadioChangeState(self._convention)
         )
@@ -178,6 +187,7 @@ class PyzoLinter(QtWidgets.QWidget):
         self._sizer2.addWidget(self._ratings, 0)
         self._sizer2.addWidget(self._font_options, 0)
         #
+        self._sizer4.addWidget(self._all, 0)
         self._sizer4.addWidget(self._convention, 0)
         self._sizer4.addWidget(self._refactor, 0)
         self._sizer4.addWidget(self._warning, 0)
@@ -233,6 +243,16 @@ class PyzoLinter(QtWidgets.QWidget):
             # code number column
             code = item.text(2)
 
+            # All
+            if (
+                radiobox.text().startswith("All")
+                and radiobox.isChecked() is True
+            ):
+                if code[0] in ['C', 'R', 'W', 'E']:
+                    self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
+                else:
+                    self._tree.setRowHidden(i, QtCore.QModelIndex(), True)
+
             # Convention
             if (
                 radiobox.text().startswith("Convention")
@@ -277,8 +297,9 @@ class PyzoLinter(QtWidgets.QWidget):
         """ reset()
         Reset widgets
         """
-        self._ratings.setText("")
-        self._convention.setChecked(True)
+        self._ratings.setText("Pylint running...")
+        self._all.setChecked(True)
+        self._all.setText(ALL)
         self._convention.setText(CONVENTION)
         self._refactor.setText(REFACTOR)
         self._warning.setText(WARNING)
@@ -292,7 +313,6 @@ class PyzoLinter(QtWidgets.QWidget):
         Start code inspection
         """
         self.reset()
-
         self.process = pyzo.QtCore.QProcess(self)
         self.process.finished.connect(self.showOutput)
         self.process.setProcessChannelMode(
@@ -327,6 +347,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
         self.process.start(pylint_exe, params)
 
+
+
     def readOutput(self):
 
         qba = pyzo.QtCore.QByteArray()
@@ -341,6 +363,7 @@ class PyzoLinter(QtWidgets.QWidget):
         Fill the treee
         """
 
+        nA = 0
         nC = 0
         nR = 0
         nW = 0
@@ -373,6 +396,7 @@ class PyzoLinter(QtWidgets.QWidget):
                     nW += 1
                 elif msg_id[0] == "E":
                     nE += 1
+                nA = nC + nR + nW + nE
 
             except:
                 if l[0].strip().startswith("Your code"):
@@ -385,6 +409,7 @@ class PyzoLinter(QtWidgets.QWidget):
                     except:
                         pass
 
+        self._all.setText("{} ({})".format(ALL, str(nA)))
         self._convention.setText("{} ({})".format(CONVENTION, str(nC)))
         self._refactor.setText("{} ({})".format(REFACTOR, str(nR)))
         self._warning.setText("{} ({})".format(WARNING, str(nW)))
