@@ -18,7 +18,6 @@ REFACTOR = "Refactor"
 WARNING = "Warning"
 ERROR = "Error"
 
-
 class PyzoLinter(QtWidgets.QWidget):
     def __init__(self, parent):
         QtWidgets.QWidget.__init__(self, parent)
