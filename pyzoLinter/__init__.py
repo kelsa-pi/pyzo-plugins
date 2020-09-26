@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Static code analysis tool - pylint
+""" Static code analysis tool - pylint"""
 
 import os
 import sys
@@ -9,8 +7,8 @@ import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate
 
-tool_name = translate("pyzoLinter", "Linter")
-tool_summary = "Shows the structure of your source code."
+tool_name = translate("Pylinter", "Pyzo pylint")
+TOOL_SUMMARY = "Shows the structure of your source code."
 
 ALL = "All Issues"
 CONVENTION = "Convention"
@@ -18,7 +16,8 @@ REFACTOR = "Refactor"
 WARNING = "Warning"
 ERROR = "Error"
 
-class PyzoLinter(QtWidgets.QWidget):
+class Pylinter(QtWidgets.QWidget):
+    """Pylinter is a gui implimentation of pylint for pyzo"""
     def __init__(self, parent):
         QtWidgets.QWidget.__init__(self, parent)
 
@@ -26,8 +25,8 @@ class PyzoLinter(QtWidgets.QWidget):
         # The pyzo tool manager makes sure that there is an entry in
         # config.tools before the tool is instantiated.
 
-        toolId = self.__class__.__name__.lower()
-        self._config = pyzo.config.tools[toolId]
+        tool_id = self.__class__.__name__.lower()
+        self._config = pyzo.config.tools[tool_id]
         if not hasattr(self._config, "fontSize"):
             if sys.platform == "darwin":
                 self._config.fontSize = 12
@@ -46,7 +45,7 @@ class PyzoLinter(QtWidgets.QWidget):
 
         # Folder for linter output file
         self.output_folder = os.path.join(
-            pyzo.appDataDir, "tools", "pyzoLinter"
+            pyzo.appDataDir, "tools", "Pylinter"
         )
 
         self.process = None
@@ -77,11 +76,11 @@ class PyzoLinter(QtWidgets.QWidget):
         )
         self._font_options._menu = QtWidgets.QMenu()
         self._font_options.setMenu(self._font_options._menu)
-        self.onFontOptionsPress()  # create menu now
+        self.on_font_options_press()  # create menu now
         # event
-        self._font_options.pressed.connect(self.onFontOptionsPress)
+        self._font_options.pressed.connect(self.on_font_options_press)
         self._font_options._menu.triggered.connect(
-            self.onFontOptionMenuTiggered
+            self.on_font_option_menu_tiggered
         )
 
         # Create button for opening output file in the editor
@@ -93,14 +92,14 @@ class PyzoLinter(QtWidgets.QWidget):
         )
         self._open_file.setToolTip("Open output file in the editor")
         # event
-        self._open_file.clicked.connect(self.onOpenOutputFile)
+        self._open_file.clicked.connect(self.on_open_output_file)
 
         # Ratings label
         self._ratings = QtWidgets.QLabel(self)
         self._ratings.setText("")
         self._ratings.setAlignment(QtCore.Qt.AlignCenter)
-        ss = "QLabel{color: black;background-color: #FFFFE0;font : bold;}"
-        self._ratings.setStyleSheet(ss)
+        style_sheet = "QLabel{color: black;background-color: #FFFFE0;font : bold;}"
+        self._ratings.setStyleSheet(style_sheet)
 
         # Create radio box All
         self._all = QtWidgets.QRadioButton(self)
@@ -130,19 +129,19 @@ class PyzoLinter(QtWidgets.QWidget):
 
         # Radio box event
         self._all.toggled.connect(
-            lambda: self.onRadioChangeState(self._all)
+            lambda: self.on_radio_change_state(self._all)
         )
         self._convention.toggled.connect(
-            lambda: self.onRadioChangeState(self._convention)
+            lambda: self.on_radio_change_state(self._convention)
         )
         self._refactor.toggled.connect(
-            lambda: self.onRadioChangeState(self._refactor)
+            lambda: self.on_radio_change_state(self._refactor)
         )
         self._warning.toggled.connect(
-            lambda: self.onRadioChangeState(self._warning)
+            lambda: self.on_radio_change_state(self._warning)
         )
         self._error.toggled.connect(
-            lambda: self.onRadioChangeState(self._error)
+            lambda: self.on_radio_change_state(self._error)
         )
 
         # Create tree widget
@@ -160,13 +159,13 @@ class PyzoLinter(QtWidgets.QWidget):
         self._tree.setRootIsDecorated(False)
         # style
         # set widget stye
-        background = self.getThemeItem(item="editor.text")
-        textcolor = self.getThemeItem(item="syntax.identifier")
-        styleKeys = ["background-color", "color"]
-        styleValues = [background["back"], textcolor["fore"]]
-        self.setWidgetStyleSheet(self._tree, styleKeys, styleValues)
+        background = self.get_theme_item(item="editor.text")
+        textcolor = self.get_theme_item(item="syntax.identifier")
+        style_keys = ["background-color", "color"]
+        style_values = [background["back"], textcolor["fore"]]
+        self.set_widget_style_sheet(self._tree, style_keys, style_values)
         # event
-        self._tree.clicked.connect(self.onItemClicked)
+        self._tree.clicked.connect(self.on_item_clicked)
 
         # Create two sizers
         self._sizer1 = QtWidgets.QVBoxLayout(self)
@@ -196,43 +195,45 @@ class PyzoLinter(QtWidgets.QWidget):
         self.setLayout(self._sizer1)
 
     # Style
-    def getThemeItem(self, item="editor.text"):
+    def get_theme_item(self, item="editor.text"):
+        """gets theme items"""
         theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
-        for k, v in theme.items():
-            key = k
+        for key, value in theme.items():
             val_dict = {}
             if key == item:
-                for x in v.split(","):
-                    item = x.split(":")
+                for thing in value.split(","):
+                    item = thing.split(":")
                     item_key = item[0].strip()
                     item_value = item[1].strip()
                     val_dict[item_key] = item_value
                 break
         return val_dict
 
-    def setWidgetStyleSheet(self, widget, keys, values):
+    def set_widget_style_sheet(self, widget, keys, values):
+        """sets widget styles"""
         wdg = str(type(widget))
         wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
-        t = ""
-        for n in range(len(keys)):
-            t = t + keys[n] + ":" + values[n] + ";"
-        ss = wdg + "{" + t + "}"
-        widget.setStyleSheet(ss)
+        text = ""
+        for num in range(len(keys)):
+            text = text + keys[num] + ":" + values[num] + ";"
+        style_sheet = wdg + "{" + text + "}"
+        widget.setStyleSheet(style_sheet)
         widget.setAutoFillBackground(True)
 
-    def setWidgetTextStyle(self, widget):
-        theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
+    def set_widget_text_style(self, widget):
+        """sets widget test style"""
+        #theme = pyzo.themes[pyzo.config.settings.theme.lower()]["data"]
         background = self.getThemeItem(item="editor.text")["back"]
         textcolor = self.getThemeItem(item="editor.text")["fore"]
         wdg = str(type(widget))
         wdg = wdg.replace("<class 'PyQt5.QtWidgets.", "").replace("'>", "")
-        ss = wdg + "{background-color:%s; color:%s;}" % (background, textcolor)
-        widget.setStyleSheet(ss)
+        style_sheet = wdg + "{background-color:%s; color:%s;}" % (background, textcolor)
+        widget.setStyleSheet(style_sheet)
         widget.setAutoFillBackground(True)
 
     # ---------
 
-    def onRadioChangeState(self, radiobox):
+    def on_radio_change_state(self, radiobox):
         """ Filter the tree
         """
         root = self._tree.invisibleRootItem()
@@ -313,11 +314,11 @@ class PyzoLinter(QtWidgets.QWidget):
         """
         self.reset()
         self.process = pyzo.QtCore.QProcess(self)
-        self.process.finished.connect(self.showOutput)
+        self.process.finished.connect(self.show_output)
         self.process.setProcessChannelMode(
             pyzo.QtCore.QProcess.SeparateChannels
         )
-        self.process.readyReadStandardOutput.connect(self.readOutput)
+        self.process.readyReadStandardOutput.connect(self.read_output)
         self.process.readyReadStandardError.connect(
             lambda: self.read_output(error=True)
         )
@@ -346,10 +347,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
         self.process.start(pylint_exe, params)
 
-
-
-    def readOutput(self):
-
+    def read_output(self):
+        """reads output of pylint"""
         qba = pyzo.QtCore.QByteArray()
         while self.process.bytesAvailable():
             qba += self.process.readAllStandardOutput()
@@ -357,16 +356,16 @@ class PyzoLinter(QtWidgets.QWidget):
 
         self.output += text
 
-    def showOutput(self):
-        """ showOutput()
-        Fill the treee
+    def show_output(self):
+        """ show_output()
+        Fill the tree
         """
 
-        nA = 0
-        nC = 0
-        nR = 0
-        nW = 0
-        nE = 0
+        num_c = 0
+        num_r = 0
+        num_w = 0
+        num_e = 0
+        num_a = 0
 
         # write output in the file
         output_file = os.path.join(self.output_folder, "pylinter_output.txt")
@@ -374,51 +373,50 @@ class PyzoLinter(QtWidgets.QWidget):
             res.write(self.output)
 
         for line in self.output.splitlines():
-            l = line.split(":")
+            line = line.split(":")
             try:
                 editor = pyzo.editors.getCurrentEditor()
                 path = os.path.join(os.path.curdir, editor.filename)
                 #path = l[-5].strip()
-                line = l[-4].strip()
-                col = l[-3].strip()
-                msg_id = l[-2].strip()
-                msg = l[-1].strip()
+                line_num = line[-4].strip()
+                col = line[-3].strip()
+                msg_id = line[-2].strip()
+                msg = line[-1].strip()
 
                 QtWidgets.QTreeWidgetItem(
-                    self._tree, [msg, path, msg_id, line, col]
+                    self._tree, [msg, path, msg_id, line_num, col]
                 )
 
                 if msg_id[0] == "C":
-                    nC += 1
+                    num_c += 1
                 elif msg_id[0] == "R":
-                    nR += 1
+                    num_r += 1
                 elif msg_id[0] == "W":
-                    nW += 1
+                    num_w += 1
                 elif msg_id[0] == "E":
-                    nE += 1
-                nA = nC + nR + nW + nE
-
+                    num_e += 1
+                num_a = num_c + num_r + num_w + num_e
             except:
-                if l[0].strip().startswith("Your code"):
-                    res = l[0].replace("Your code has been rated at", "")
+                if line[0].strip().startswith("Your code"):
+                    res = line[0].replace("Your code has been rated at", "")
                     res = res.replace("(previous run", "")
                     try:
-                        prevsplit = l[1].split(",")
+                        prevsplit = line[1].split(",")
                         prev = prevsplit[1].replace(")", "")
                         self._ratings.setText(res + prev)
                     except:
                         pass
 
-        self._all.setText("{} ({})".format(ALL, str(nA)))
-        self._convention.setText("{} ({})".format(CONVENTION, str(nC)))
-        self._refactor.setText("{} ({})".format(REFACTOR, str(nR)))
-        self._warning.setText("{} ({})".format(WARNING, str(nW)))
-        self._error.setText("{} ({})".format(ERROR, str(nE)))
+        self._all.setText("{} ({})".format(ALL, str(num_a)))
+        self._convention.setText("{} ({})".format(CONVENTION, str(num_c)))
+        self._refactor.setText("{} ({})".format(REFACTOR, str(num_r)))
+        self._warning.setText("{} ({})".format(WARNING, str(num_w)))
+        self._error.setText("{} ({})".format(ERROR, str(num_e)))
 
-        self.onRadioChangeState(self._convention)
+        self.on_radio_change_state(self._convention)
 
-    def onItemClicked(self):
-        """ onItemClicked()
+    def on_item_clicked(self):
+        """ on_item_clicked()
         If item clicked in the tree select a line in editor
         """
         editor = pyzo.editors.getCurrentEditor()
@@ -434,14 +432,14 @@ class PyzoLinter(QtWidgets.QWidget):
         cursor.select(QtGui.QTextCursor.LineUnderCursor)
         editor.setTextCursor(cursor)
 
-    def onOpenOutputFile(self):
-        """ onOpenOutputFile()
+    def on_open_output_file(self):
+        """ on_open_output_file()
         Open output file in editor
         """
         fpath = os.path.join(self.output_folder, "pylinter_output.txt")
         pyzo.editors.loadFile(fpath)
 
-    def onFontOptionsPress(self):
+    def on_font_options_press(self):
         """ Create the menu for the button, Do each time to make sure
         the checks are right. """
 
@@ -450,13 +448,13 @@ class PyzoLinter(QtWidgets.QWidget):
         menu.clear()
 
         # Add font size options
-        currentSize = self._config.fontSize
+        current_size = self._config.fontSize
         for i in range(8, 15):
             action = menu.addAction("font-size: %ipx" % i)
             action.setCheckable(True)
-            action.setChecked(i == currentSize)
+            action.setChecked(i == current_size)
 
-    def onFontOptionMenuTiggered(self, action):
+    def on_font_option_menu_tiggered(self, action):
         """  The user decides what to show in the structure. """
         # Get text
         text = action.text().lower()
