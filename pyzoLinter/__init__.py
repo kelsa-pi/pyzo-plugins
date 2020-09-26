@@ -245,8 +245,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
             # All
             if (
-                radiobox.text().startswith("All")
-                and radiobox.isChecked() is True
+                    radiobox.text().startswith("All")
+                    and radiobox.isChecked() is True
             ):
                 if code[0] in ['C', 'R', 'W', 'E']:
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
@@ -255,8 +255,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
             # Convention
             if (
-                radiobox.text().startswith("Convention")
-                and radiobox.isChecked() is True
+                    radiobox.text().startswith("Convention")
+                    and radiobox.isChecked() is True
             ):
                 if code[0] == "C":
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
@@ -265,8 +265,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
             # Refactor
             if (
-                radiobox.text().startswith("Refactor")
-                and radiobox.isChecked() is True
+                    radiobox.text().startswith("Refactor")
+                    and radiobox.isChecked() is True
             ):
                 if code[0] == "R":
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
@@ -275,8 +275,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
             # Warning
             if (
-                radiobox.text().startswith("Warning")
-                and radiobox.isChecked() is True
+                    radiobox.text().startswith("Warning")
+                    and radiobox.isChecked() is True
             ):
                 if code[0] == "W":
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
@@ -285,8 +285,8 @@ class PyzoLinter(QtWidgets.QWidget):
 
             # Error
             if (
-                radiobox.text().startswith("Error")
-                and radiobox.isChecked() is True
+                    radiobox.text().startswith("Error")
+                    and radiobox.isChecked() is True
             ):
                 if code[0] == "E":
                     self._tree.setRowHidden(i, QtCore.QModelIndex(), False)
@@ -377,12 +377,12 @@ class PyzoLinter(QtWidgets.QWidget):
         for line in self.output.splitlines():
             l = line.split(":")
             try:
-                path = l[0].strip()
-                path = path.replace(self.cur_dir_path, "")[0:] #Edited to fix.
-                line = l[1].strip()
-                col = l[2].strip()
-                msg_id = l[3].strip()
-                msg = l[4].strip()
+                path = l[-5].strip()
+                path = path.replace(self.cur_dir_path, "") #Edited to fix.
+                line = l[-4].strip()
+                col = l[-3].strip()
+                msg_id = l[-2].strip()
+                msg = l[-1].strip()
 
                 QtWidgets.QTreeWidgetItem(
                     self._tree, [msg, path, msg_id, line, col]
@@ -422,26 +422,18 @@ class PyzoLinter(QtWidgets.QWidget):
         If item clicked in the tree select a line in editor
         """
         editor = pyzo.editors.getCurrentEditor()
-        fname = self._tree.currentItem().text(1).split("/")[-1] #Edited to fix.
+        fname = self._tree.currentItem().text(1)
         filepath = os.path.join(self.cur_dir_path, fname)
         lineno = self._tree.currentItem().text(3)
 
-        # current editor path = selected file in the tree
-        if editor.filename == filepath:
-            cursor = QtGui.QTextCursor(
-                editor.document().findBlockByLineNumber(int(lineno) - 1)
-            )
-            cursor.select(QtGui.QTextCursor.LineUnderCursor)
-            editor.setTextCursor(cursor)
-        else:
-            # load file in the editor
-            pyzo.editors.loadFile(filepath)
-            editor = pyzo.editors.getCurrentEditor()
-            cursor = QtGui.QTextCursor(
-                editor.document().findBlockByLineNumber(int(lineno) - 1)
-            )
-            cursor.select(QtGui.QTextCursor.LineUnderCursor)
-            editor.setTextCursor(cursor)
+        # load file in the editor
+        pyzo.editors.loadFile(filepath)
+        editor = pyzo.editors.getCurrentEditor()
+        cursor = QtGui.QTextCursor(
+            editor.document().findBlockByLineNumber(int(lineno) - 1)
+        )
+        cursor.select(QtGui.QTextCursor.LineUnderCursor)
+        editor.setTextCursor(cursor)
 
     def onOpenOutputFile(self):
         """ onOpenOutputFile()
