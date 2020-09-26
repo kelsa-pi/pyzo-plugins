@@ -377,8 +377,9 @@ class PyzoLinter(QtWidgets.QWidget):
         for line in self.output.splitlines():
             l = line.split(":")
             try:
-                path = l[-5].strip()
-                path = path.replace(self.cur_dir_path, "") #Edited to fix.
+                editor = pyzo.editors.getCurrentEditor()
+                path = os.path.join(os.path.curdir, editor.filename)
+                #path = l[-5].strip()
                 line = l[-4].strip()
                 col = l[-3].strip()
                 msg_id = l[-2].strip()
@@ -428,7 +429,6 @@ class PyzoLinter(QtWidgets.QWidget):
 
         # load file in the editor
         pyzo.editors.loadFile(filepath)
-        editor = pyzo.editors.getCurrentEditor()
         cursor = QtGui.QTextCursor(
             editor.document().findBlockByLineNumber(int(lineno) - 1)
         )
