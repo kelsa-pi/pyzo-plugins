@@ -7,7 +7,7 @@ import pyzo
 from pyzo.util.qt import QtCore, QtGui, QtWidgets
 from pyzo import translate
 
-tool_name = translate("Pylinter", "Pyzo pylint")
+tool_name = translate("pyzoLinter", "Pyzo pylint")
 TOOL_SUMMARY = "Shows the structure of your source code."
 
 ALL = "All Issues"
@@ -16,8 +16,8 @@ REFACTOR = "Refactor"
 WARNING = "Warning"
 ERROR = "Error"
 
-class Pylinter(QtWidgets.QWidget):
-    """Pylinter is a gui implimentation of pylint for pyzo"""
+class PyzoLinter(QtWidgets.QWidget):
+    """PyzoLinter is a gui implimentation of pylint for pyzo"""
     def __init__(self, parent):
         QtWidgets.QWidget.__init__(self, parent)
 
@@ -45,7 +45,7 @@ class Pylinter(QtWidgets.QWidget):
 
         # Folder for linter output file
         self.output_folder = os.path.join(
-            pyzo.appDataDir, "tools", "Pylinter"
+            pyzo.appDataDir, "tools", "pyzoLinter"
         )
 
         self.process = None
